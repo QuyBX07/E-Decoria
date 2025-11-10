@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.input {
+    @apply w-full p-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200;
+}
+
+.label {
+    @apply block mb-1 text-sm font-medium text-gray-600;
+}
+
+.file-input {
+    @apply block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100;
+}
