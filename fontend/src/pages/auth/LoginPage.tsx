@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { GooglePayload } from "../../types/GooglePayload";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -126,6 +129,56 @@ const LoginPage: React.FC = () => {
             >
               Đăng nhập
             </button>
+            <div className="flex justify-center mt-6">
+              <GoogleLogin
+                onSuccess={(credentialResponse: CredentialResponse) => {
+                  const credential = credentialResponse.credential;
+                  if (!credential) return;
+
+                  const decoded = jwtDecode<GooglePayload>(credential);
+                  console.log("Google user info:", decoded);
+
+                  fetch("http://localhost:8081/api/auth/google", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: credential }),
+                  })
+                    .then((res) => {
+                      if (!res.ok) throw new Error("Đăng nhập Google thất bại");
+                      return res.json();
+                    })
+                    .then((data) => {
+                      localStorage.setItem("token", data.token);
+                      localStorage.setItem("user", JSON.stringify(data.user));
+
+                      Swal.fire({
+                        icon: "success",
+                        title: "Đăng nhập bằng Google thành công!",
+                        showConfirmButton: false,
+                        timer: 1500,
+                      });
+                      setTimeout(() => navigate("/"), 1500);
+                    })
+                    .catch((err) => {
+                      console.error("Google login error:", err);
+                      Swal.fire({
+                        icon: "error",
+                        title: "Không thể đăng nhập bằng Google!",
+                        showConfirmButton: false,
+                        timer: 2000,
+                      });
+                    });
+                }}
+                onError={() => {
+                  Swal.fire({
+                    icon: "error",
+                    title: "Đăng nhập Google thất bại!",
+                    showConfirmButton: false,
+                    timer: 2000,
+                  });
+                }}
+              />
+            </div>
           </form>
         </div>
       </div>

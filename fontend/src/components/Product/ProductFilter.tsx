@@ -20,7 +20,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
         rounded-xl 
         shadow-md 
         transition-all duration-300
-        max-h-[80vh]         /* ✅ Giới hạn chiều cao */
+        max-h-[100vh]         /* ✅ Giới hạn chiều cao */
         overflow-y-auto      /* ✅ Cuộn khi vượt quá */
         scrollbar-thin 
         scrollbar-thumb-[#e4c475] 

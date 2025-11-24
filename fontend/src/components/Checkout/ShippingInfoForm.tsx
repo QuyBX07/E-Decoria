@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
+import MapPickerModal from "@components/MapPickerModal"; // import modal bản đồ
 
 export type ShippingInfo = {
-  recipientName: string; // 👈 đổi tên
+  recipientName: string;
   recipientPhone: string;
   address: string;
   shippingMethod: string;
@@ -14,6 +15,7 @@ interface Props {
 
 const ShippingInfoForm: React.FC<Props> = ({ value, onChange }) => {
   const [form, setForm] = useState<ShippingInfo>(value);
+  const [openMap, setOpenMap] = useState(false);
 
   useEffect(() => setForm(value), [value]);
 
@@ -30,10 +32,8 @@ const ShippingInfoForm: React.FC<Props> = ({ value, onChange }) => {
         <label className="block mb-1 font-medium">Tên người nhận</label>
         <input
           type="text"
-          value={value.recipientName}
-          onChange={(e) =>
-            onChange({ ...value, recipientName: e.target.value })
-          }
+          value={form.recipientName}
+          onChange={(e) => handle("recipientName", e.target.value)}
           placeholder="Nhập tên người nhận hàng"
           className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
@@ -44,25 +44,26 @@ const ShippingInfoForm: React.FC<Props> = ({ value, onChange }) => {
         <label className="block mb-1 font-medium">Số điện thoại</label>
         <input
           type="tel"
-          value={value.recipientPhone}
-          onChange={(e) =>
-            onChange({ ...value, recipientPhone: e.target.value })
-          }
+          value={form.recipientPhone}
+          onChange={(e) => handle("recipientPhone", e.target.value)}
           placeholder="Nhập số điện thoại người nhận"
           className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       </div>
 
+      {/* 🏠 Địa chỉ giao hàng */}
       <div>
         <label className="block text-sm font-medium">Địa chỉ giao hàng</label>
         <input
           value={form.address}
-          onChange={(e) => handle("address", e.target.value)}
-          className="w-full p-2 border rounded"
-          placeholder="123 Đường X, Quận Y, TP"
+          onClick={() => setOpenMap(true)}
+          readOnly
+          className="w-full p-2 border rounded cursor-pointer"
+          placeholder="Nhấn để chọn trên bản đồ"
         />
       </div>
 
+      {/* Phương thức giao */}
       <div>
         <label className="block text-sm font-medium">Phương thức giao</label>
         <select
@@ -74,6 +75,13 @@ const ShippingInfoForm: React.FC<Props> = ({ value, onChange }) => {
           <option value="Giao tiêu chuẩn">Giao tiêu chuẩn</option>
         </select>
       </div>
+
+      {/* Modal bản đồ */}
+      <MapPickerModal
+        open={openMap}
+        onClose={() => setOpenMap(false)}
+        onSelect={(address) => handle("address", address)}
+      />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getOrderDetailById, cancelOrder } from "@/services/OrderService";
 import { OrderDetailResponseDTO } from "@/types/Order";
-import { Package, CheckCircle, Clock, Truck, XCircle } from "lucide-react";
+import { Package, Clock, Truck, XCircle } from "lucide-react";
 import Swal from "sweetalert2";
 import HeaderSection from "@/components/HeaderSection";
 
@@ -46,16 +46,10 @@ const OrderDetailPage: React.FC = () => {
             <Package className="w-4 h-4" /> Đã xác nhận
           </span>
         );
-      case "SHIPPED":
+      case "DELIVERED":
         return (
           <span className="flex items-center gap-1 text-purple-600">
             <Truck className="w-4 h-4" /> Đang giao
-          </span>
-        );
-      case "DELIVERED":
-        return (
-          <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" /> Hoàn thành
           </span>
         );
       case "CANCELLED":
@@ -69,7 +63,6 @@ const OrderDetailPage: React.FC = () => {
     }
   };
 
-  // 🛑 Hủy đơn hàng
   const handleCancelOrder = async () => {
     Swal.fire({
       title: "Xác nhận hủy đơn hàng?",
@@ -114,6 +107,7 @@ const OrderDetailPage: React.FC = () => {
           <div>{renderStatus(order.status)}</div>
         </div>
 
+        {/* Thông tin giao hàng và thanh toán */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <h3 className="mb-2 font-medium text-gray-700">
@@ -133,6 +127,7 @@ const OrderDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Danh sách sản phẩm */}
         <h3 className="mt-6 mb-3 text-lg font-semibold">🛒 Sản phẩm</h3>
         <div className="space-y-3">
           {order.items.map((item) => (
@@ -140,7 +135,10 @@ const OrderDetailPage: React.FC = () => {
               key={item.id}
               className="flex items-center justify-between p-3 border rounded-md"
             >
-              <div className="flex items-center gap-3">
+              <div
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={() => navigate(`/products/${item.productId}`)}
+              >
                 <img
                   src={item.productImage || "/placeholder.svg"}
                   alt={item.productName || "Sản phẩm"}
@@ -155,9 +153,26 @@ const OrderDetailPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <p className="font-semibold text-gray-800">
-                {item.subtotal.toLocaleString()}₫
-              </p>
+
+              <div className="flex flex-col items-end gap-2">
+                <p className="font-semibold text-gray-800">
+                  {item.subtotal.toLocaleString()}₫
+                </p>
+
+                {/* Nút đánh giá từng sản phẩm nếu đã giao */}
+                {order.status === "CONFIRMED" && (
+                  <button
+                    onClick={() =>
+                      navigate(`/reviews/${item.productId}`, {
+                        state: { orderId: order.id, orderStatus: order.status },
+                      })
+                    }
+                    className="px-4 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+                  >
+                    Đánh giá
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -169,16 +184,32 @@ const OrderDetailPage: React.FC = () => {
           </span>
         </div>
 
-        {["PENDING", "CONFIRMED"].includes(order.status) && (
-          <div className="flex justify-end mt-8">
+        {/* Nút hành động chung */}
+        <div className="flex justify-end gap-2 mt-8">
+          {order.status === "PENDING" && (
             <button
               onClick={handleCancelOrder}
               className="px-5 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
             >
               Hủy đơn hàng
             </button>
-          </div>
-        )}
+          )}
+
+          {["SHIPPED", "DELIVERED"].includes(order.status) && (
+            <button
+              onClick={() =>
+                Swal.fire(
+                  "Không thể hủy!",
+                  "Đơn hàng đã được giao/đang giao nên không thể hủy.",
+                  "warning"
+                )
+              }
+              className="px-5 py-2 text-white bg-gray-400 rounded-lg cursor-not-allowed"
+            >
+              Không thể hủy
+            </button>
+          )}
+        </div>
       </div>
     </>
   );

@@ -35,7 +35,7 @@ export interface OrderResponseDTO {
   paymentMethod: string;
   shippingAddress: string;
   shippingMethod: string;
-  transactionId: string;
+  transactionId: string | null;
   createdAt: string;
   recipientName: string;    // 👈 thêm
   recipientPhone: string;   // 👈 thêm

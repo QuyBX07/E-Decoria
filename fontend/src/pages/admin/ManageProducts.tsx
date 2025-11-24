@@ -22,6 +22,9 @@ const ManageProducts: React.FC = () => {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 7;
 
   useEffect(() => {
     fetchProducts();
@@ -139,6 +142,17 @@ const ManageProducts: React.FC = () => {
       }
     }
   };
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+
+  const paginatedProducts = filteredProducts.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-b from-gray-50 to-gray-100">
@@ -258,6 +272,49 @@ const ManageProducts: React.FC = () => {
       </div>
 
       {/* Danh sách sản phẩm */}
+      <div className="flex items-center justify-between mb-4">
+        {/* Ô tìm kiếm */}
+        <div className="relative w-72">
+          <span className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Tìm theo tên sản phẩm..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-4 py-2 pl-10 transition-all border rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+          />
+        </div>
+
+        {/* Phân trang */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="rounded-xl"
+          >
+            ⬅ Trước
+          </Button>
+
+          <div className="px-4 py-2 text-sm font-medium bg-gray-100 border shadow-sm rounded-xl">
+            Trang {page} / {totalPages || 1}
+          </div>
+
+          <Button
+            variant="outline"
+            disabled={page === totalPages || totalPages === 0}
+            onClick={() => setPage(page + 1)}
+            className="rounded-xl"
+          >
+            Sau ➡
+          </Button>
+        </div>
+      </div>
       <div className="overflow-x-auto bg-white border border-gray-100 shadow-xl rounded-2xl">
         <table className="w-full border-collapse">
           <thead className="text-gray-700 bg-blue-100">
@@ -265,6 +322,7 @@ const ManageProducts: React.FC = () => {
               <th className="p-3 text-left">Ảnh</th>
               <th className="p-3 text-left">Tên</th>
               <th className="p-3 text-left">Giá</th>
+              <th className="p-3 text-left">Số lượng</th>
               <th className="p-3 text-left">Màu sắc</th>
               <th className="p-3 text-left">Chất liệu</th>
               <th className="p-3 text-left">Phong cách</th>
@@ -273,7 +331,7 @@ const ManageProducts: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
+            {paginatedProducts.map((p) => (
               <tr
                 key={p.id}
                 className="transition-all border-t hover:bg-gray-50"
@@ -287,6 +345,7 @@ const ManageProducts: React.FC = () => {
                 </td>
                 <td className="p-3 font-medium">{p.name}</td>
                 <td className="p-3">{p.price.toLocaleString()} ₫</td>
+                <td className="p-3">{p.stock ?? 0}</td>
                 <td className="p-3">{p.color}</td>
                 <td className="p-3">{p.material}</td>
                 <td className="p-3">{p.style}</td>

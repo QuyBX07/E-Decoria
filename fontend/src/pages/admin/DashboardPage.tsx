@@ -1,4 +1,3 @@
-// src/pages/admin/Dashboard.tsx
 import React from "react";
 
 const DashboardPage: React.FC = () => {

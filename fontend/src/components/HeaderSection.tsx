@@ -92,18 +92,29 @@ const HeaderSection: React.FC = () => {
           {/* Right Section */}
           <div className="flex items-center gap-4">
             {/* Cart */}
-            <Link to="/cart">
-              <Button
-                variant="ghost"
-                className="relative p-2 transition rounded-full hover:bg-primary/10"
-              >
-                <ShoppingCart className="w-5 h-5 text-primary-dark" />
-                {/* 🔔 Badge tạm thời, có thể thay bằng context sau */}
-                {/* <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-semibold text-white rounded-full -top-1.5 -right-1.5 bg-primary-dark">
-                  2
-                </span> */}
-              </Button>
-            </Link>
+            {/* Cart */}
+            <Button
+              variant="ghost"
+              className="relative p-2 transition rounded-full hover:bg-primary/10"
+              onClick={() => {
+                if (!isLoggedIn) {
+                  Swal.fire({
+                    icon: "warning",
+                    title: "Bạn cần đăng nhập",
+                    text: "Vui lòng đăng nhập để sử dụng giỏ hàng.",
+                    confirmButtonText: "Đăng nhập",
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      navigate("/login");
+                    }
+                  });
+                } else {
+                  navigate("/cart");
+                }
+              }}
+            >
+              <ShoppingCart className="w-5 h-5 text-primary-dark" />
+            </Button>
 
             {/* Avatar / Login */}
             {isLoggedIn ? (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ProductDetailProps } from "@/types/Products";
 import { ShoppingCart } from "lucide-react";
@@ -6,12 +6,36 @@ import ProductCard from "./ProductCard";
 import Swal from "sweetalert2";
 import { addToCart } from "@/services/CartService";
 import { useNavigate } from "react-router-dom";
+import Product3DViewer from "../model3D/Product3DViewer";
+import useProductModel from "@/hooks/useProductModel";
+import {
+  getReviewsByProduct,
+  getAverageRatingByProduct,
+} from "@/services/ReviewService";
+
+import { ReviewResponseDTO } from "@/types/Review";
 
 const ProductDetail: React.FC<ProductDetailProps> = ({
   product,
   relatedProducts,
 }) => {
   const navigate = useNavigate();
+  const [reviews, setReviews] = useState<ReviewResponseDTO[]>([]);
+  const [averageRating, setAverageRating] = useState<{
+    averageRating: number;
+    reviewCount: number;
+  }>({ averageRating: 0, reviewCount: 0 });
+
+  const modelUrl = useProductModel(product.id);
+
+  useEffect(() => {
+    // fetch review list
+    getReviewsByProduct(product.id).then(setReviews).catch(console.error);
+    // fetch average rating
+    getAverageRatingByProduct(product.id)
+      .then(setAverageRating)
+      .catch(console.error);
+  }, [product.id]);
 
   const handleAdd = async () => {
     try {
@@ -24,14 +48,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         showConfirmButton: false,
       });
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Vui lòng đăng nhập để thêm sản phẩm.";
       Swal.fire({
         icon: "error",
         title: "Thêm thất bại!",
-        text: message,
+        text:
+          err instanceof Error
+            ? err.message
+            : "Vui lòng đăng nhập để thêm sản phẩm.",
       });
     }
   };
@@ -50,6 +73,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     }
   };
 
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating - fullStars >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+    return (
+      <>
+        {"★".repeat(fullStars)}
+        {halfStar && "½"}
+        {"☆".repeat(emptyStars)}
+      </>
+    );
+  };
+
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-[#fffaf5] via-[#fdf6ef] to-[#f9f3ea]">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -61,11 +97,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             transition={{ duration: 0.6 }}
             className="relative overflow-hidden shadow-md rounded-2xl bg-white/60 backdrop-blur-sm"
           >
-            <img
-              src={product.imageUrl || "/placeholder.svg"}
-              alt={product.name}
-              className="object-cover w-full h-[500px] rounded-2xl"
-            />
+            {modelUrl ? (
+              <Product3DViewer modelUrl={modelUrl} />
+            ) : (
+              <div className="flex items-center justify-center h-[500px] text-gray-500">
+                Không có model 3D
+              </div>
+            )}
           </motion.div>
 
           {/* Thông tin */}
@@ -75,9 +113,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             transition={{ duration: 0.8 }}
             className="flex flex-col justify-center"
           >
-            <h1 className="mb-3 font-serif text-3xl font-bold text-gray-800 md:text-4xl">
+            <h1 className="mb-2 font-serif text-3xl font-bold text-gray-800 md:text-4xl">
               {product.name}
             </h1>
+
+            {/* Hiển thị rating trung bình */}
+            <div className="flex items-center gap-2 mb-4 text-yellow-500">
+              <span className="text-xl font-semibold">
+                {renderStars(averageRating.averageRating)}
+              </span>
+              <span className="text-sm text-gray-600">
+                ({averageRating.averageRating}/5)
+              </span>
+              <span className="text-sm text-gray-600">
+                ({averageRating.reviewCount} đánh giá)
+              </span>
+            </div>
 
             <p className="mb-6 text-base leading-relaxed text-gray-600">
               {product.description ||
@@ -93,10 +144,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 onClick={handleAdd}
                 className="flex items-center gap-2 px-6 py-3 font-medium text-white transition-all rounded-lg bg-primary hover:bg-primary/90"
               >
-                <ShoppingCart className="w-5 h-5" />
-                Thêm vào giỏ
+                <ShoppingCart className="w-5 h-5" /> Thêm vào giỏ
               </button>
-
               <button
                 onClick={handleBuyNow}
                 className="px-6 py-3 font-medium transition-all border rounded-lg text-primary border-primary hover:bg-primary/10"
@@ -121,6 +170,33 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             {product.description ||
               "Mỗi sản phẩm của Décor Studio đều được chế tác tỉ mỉ với chất liệu cao cấp, mang lại vẻ đẹp tự nhiên và tinh tế cho không gian sống."}
           </p>
+        </motion.div>
+
+        {/* Đánh giá */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.8 }}
+          className="mt-8"
+        >
+          <h2 className="mb-4 text-2xl font-semibold text-gray-800">
+            Đánh giá sản phẩm
+          </h2>
+          {reviews.length === 0 && (
+            <p className="text-gray-500">Chưa có đánh giá nào.</p>
+          )}
+          {reviews.map((r) => (
+            <div key={r.id} className="p-4 mb-4 border rounded-lg bg-white/50">
+              <div className="flex items-center gap-2 text-yellow-500">
+                {renderStars(r.rating)}
+              </div>
+              {r.comment && <p className="mt-1 text-gray-700">{r.comment}</p>}
+              <p className="mt-1 text-sm text-gray-500">
+                Người dùng: {r.username} –{" "}
+                {new Date(r.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
         </motion.div>
 
         {/* Sản phẩm liên quan */}

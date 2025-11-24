@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { updateProfile } from "@/services/ProfileService";
 import { User } from "@/types/User";
 import Swal from "sweetalert2";
+import MapPickerModal from "@components/MapPickerModal"; // ➕ thêm modal bản đồ
 
 interface PersonalInfoProps {
   user: User;
@@ -15,7 +16,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ user, setUser }) => {
     address: user.address || "",
     phone: user.phone || "",
   });
+
   const [loading, setLoading] = useState(false);
+  const [openMap, setOpenMap] = useState(false); // ➕ trạng thái mở modal bản đồ
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -59,10 +62,12 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ user, setUser }) => {
   return (
     <div>
       <h2 className="mb-4 text-2xl font-semibold">Thông tin cá nhân</h2>
+
       <form
         onSubmit={handleSubmit}
         className="grid max-w-2xl grid-cols-2 gap-6"
       >
+        {/* Full name */}
         <div>
           <label className="block mb-1 text-gray-700">Họ và tên</label>
           <input
@@ -74,6 +79,8 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ user, setUser }) => {
             required
           />
         </div>
+
+        {/* Email */}
         <div>
           <label className="block mb-1 text-gray-700">Email</label>
           <input
@@ -84,6 +91,8 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ user, setUser }) => {
             className="w-full px-4 py-3 bg-gray-100 border rounded-lg"
           />
         </div>
+
+        {/* Phone */}
         <div>
           <label className="block mb-1 text-gray-700">Số điện thoại</label>
           <input
@@ -94,26 +103,40 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ user, setUser }) => {
             className="w-full px-4 py-3 border rounded-lg focus:ring-primary focus:outline-none"
           />
         </div>
+
+        {/* Address with map (giống shipping form) */}
         <div>
           <label className="block mb-1 text-gray-700">Địa chỉ</label>
+
           <input
             name="address"
             type="text"
+            readOnly
             value={form.address}
-            onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-primary focus:outline-none"
+            onClick={() => setOpenMap(true)}
+            className="w-full px-4 py-3 bg-white border rounded-lg cursor-pointer focus:ring-primary focus:outline-none"
+            placeholder="Nhấn để chọn trên bản đồ"
           />
         </div>
+
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className={`col-span-2 px-6 py-3 text-white rounded-lg w-fit ${
+          className={`col-span-2 px-6 py-3 text-white rounded-lg ${
             loading ? "bg-gray-400" : "bg-primary hover:bg-primary/90"
           }`}
         >
           {loading ? "Đang cập nhật..." : "Cập nhật"}
         </button>
       </form>
+
+      {/* Modal bản đồ */}
+      <MapPickerModal
+        open={openMap}
+        onClose={() => setOpenMap(false)}
+        onSelect={(address) => setForm((prev) => ({ ...prev, address }))}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Package, Users, ShoppingCart } from "lucide-react";
+import { BarChart3, Package, Users, ShoppingCart, Box } from "lucide-react";
+
 
 const Sidebar: React.FC = () => {
   const { pathname } = useLocation();
@@ -18,7 +19,9 @@ const Sidebar: React.FC = () => {
       path: "/admin/orders",
       icon: <ShoppingCart size={20} />,
     },
+    { name: "Model3D", path: "/admin/model", icon: <Box size={20} /> },
     { name: "Người dùng", path: "/admin/users", icon: <Users size={20} /> },
+    { name: "Nhập Hàng", path: "/admin/imports", icon: <Users size={20} /> },
   ];
 
   return (
