@@ -34,15 +34,20 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/products/**",
                                 "/api/categories/**",
-                                "/api/upload",          // ✅ cho phép upload ảnh không cần login
-                                "/images/**",            // ✅ cho phép truy cập ảnh trực tiếp
-                                "/api/admin/orders/**"
+                                "/api/upload",
+                                "/api/models/upload",
+                                "/api/models/**",
+                                "/images/**",
+                                "/api/admin/orders/**",
+                                "/api/reviews/product/**",
+                                "/api/reports/**"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/profile/**",
                                 "/api/orders/**",
                                 "/api/orders/detail/**",
-                                "/api/cart/**"
+                                "/api/cart/**",
+                                "/api/reviews"
                         ).authenticated()
                         .anyRequest().permitAll()
                 )

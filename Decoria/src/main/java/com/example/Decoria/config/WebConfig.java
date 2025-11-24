@@ -20,5 +20,12 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:" + imagePath + "/");
+
+        // Serve 3D models
+        Path modelDir = Paths.get("models");
+        String modelPath = modelDir.toFile().getAbsolutePath();
+
+        registry.addResourceHandler("/models/**")
+                .addResourceLocations("file:" + modelPath + "/");
     }
 }

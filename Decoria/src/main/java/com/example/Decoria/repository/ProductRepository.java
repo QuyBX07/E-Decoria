@@ -13,4 +13,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("SELECT p FROM Product p WHERE p.categoryId = :categoryId AND p.id <> :productId")
     List<Product> findRelatedProducts(@Param("categoryId") UUID categoryId,
                                       @Param("productId") UUID productId);
+
+    @Query("SELECT p FROM Product p WHERE COALESCE(p.stock, 0) > 0")
+    List<Product> findAllInStock();
+
 }
