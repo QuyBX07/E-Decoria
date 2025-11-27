@@ -35,12 +35,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            COALESCE(SUM(o.totalAmount), 0)
     FROM Order o
     WHERE FUNCTION('date', o.createdAt) BETWEEN :start AND :end
-      AND o.status = 'DELIVERED'
+      AND o.paymentStatus = 'PAID'
     GROUP BY FUNCTION('date', o.createdAt)
     ORDER BY FUNCTION('date', o.createdAt)
 """)
     List<Object[]> getRevenueBetweenDates(@Param("start") LocalDate start,
                                           @Param("end") LocalDate end);
+
 
 
     @Query("""
@@ -49,7 +50,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     FROM Order o
     WHERE FUNCTION('month', o.createdAt) = :month
       AND FUNCTION('year', o.createdAt) = :year
-      AND o.status = 'DELIVERED'
+      AND o.paymentStatus = 'PAID'
     GROUP BY FUNCTION('week', o.createdAt)
     ORDER BY FUNCTION('week', o.createdAt)
 """)
@@ -57,26 +58,29 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                                      @Param("year") int year);
 
 
+
     @Query("""
     SELECT FUNCTION('month', o.createdAt),
            COALESCE(SUM(o.totalAmount), 0)
     FROM Order o
     WHERE FUNCTION('year', o.createdAt) = :year
-      AND o.status = 'DELIVERED'
+      AND o.paymentStatus = 'PAID'
     GROUP BY FUNCTION('month', o.createdAt)
     ORDER BY FUNCTION('month', o.createdAt)
 """)
     List<Object[]> getRevenueByMonths(@Param("year") int year);
 
 
+
     //profit
     @Query("""
     SELECT COALESCE(SUM(o.totalAmount), 0)
     FROM Order o
-    WHERE o.status = 'DELIVERED'
+    WHERE o.paymentStatus = 'PAID'
       AND o.createdAt BETWEEN :start AND :end
 """)
-    BigDecimal getRevenueBetween(LocalDateTime start, LocalDateTime end);;
+    BigDecimal getRevenueBetween(LocalDateTime start, LocalDateTime end);
+
 
 
 

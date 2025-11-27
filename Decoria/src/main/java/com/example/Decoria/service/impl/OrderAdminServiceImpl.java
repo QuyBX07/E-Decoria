@@ -2,6 +2,7 @@ package com.example.Decoria.service.impl;
 
 import com.example.Decoria.dto.OrderAdminResponseDTO;
 import com.example.Decoria.entity.Order;
+import com.example.Decoria.entity.Payment;
 import com.example.Decoria.exception.NotFoundException;
 import com.example.Decoria.mapper.OrderMapper;
 import com.example.Decoria.repository.OrderRepository;
@@ -49,12 +50,26 @@ public class OrderAdminServiceImpl implements OrderAdminService {
     }
 
     @Override
+    @Transactional
     public void updateOrderStatus(UUID orderId, String status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
-        order.setStatus(Order.OrderStatus.valueOf(status.toUpperCase()));
+
+        Order.OrderStatus newStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+        order.setStatus(newStatus);
+
+        // 🔥 Khi đơn hàng chuyển sang CONFIRMED → tự động update Payment
+        if (newStatus == Order.OrderStatus.CONFIRMED) {
+            Payment payment = order.getPayment();
+            if (payment != null) {
+                payment.setStatus(Payment.PaymentStatus.COMPLETED);
+            }
+            order.setPaymentStatus("PAID"); // nếu muốn sync với field paymentStatus trong Order
+        }
+
         orderRepository.save(order);
     }
+
 
     @Override
     public void deleteOrder(UUID orderId) {
