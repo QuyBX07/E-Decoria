@@ -13,7 +13,9 @@ import java.util.Base64;
 public class JwtTokenProvider {
 
     // ✅ Khóa bí mật cố định (không tạo ngẫu nhiên mỗi lần)
-    private static final String SECRET_KEY = "d408de7a44eca01751f7fb5acbed6c50ea3f9887a9687532fad62a355de97633";
+   private static final String SECRET_KEY = "d408de7a44eca01751f7fb5acbed6c50ea3f9887a9687532fad62a355de97633";
+//    private static final String SECRET_KEY = System.getenv("SECRET_KEY");
+
     private final Key key = Keys.hmacShaKeyFor(Base64.getEncoder().encode(SECRET_KEY.getBytes()));
     private final long EXPIRATION_TIME = 86400000; // 1 ngày
 

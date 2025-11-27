@@ -19,26 +19,26 @@ public class ReportController {
 
     // ==================== REVENUE ====================
 
-    @GetMapping("/revenue/daily")
-    public RevenueDTO getDailyRevenue(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return reportService.getDailyRevenue(date);
+    @GetMapping("/revenue/last-7-days")
+    public List<RevenuePointDTO> getRevenueLast7Days() {
+        return reportService.getRevenueLast7Days();
     }
 
-    @GetMapping("/revenue/monthly")
-    public RevenueDTO getMonthlyRevenue(@RequestParam int month, @RequestParam int year) {
-        return reportService.getMonthlyRevenue(month, year);
+    @GetMapping("/revenue/by-weeks")
+    public List<RevenuePointDTO> getRevenueByWeeks(
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+        return reportService.getRevenueByWeeks(month, year);
     }
 
-    @GetMapping("/revenue/yearly")
-    public RevenueDTO getYearlyRevenue(@RequestParam int year) {
-        return reportService.getYearlyRevenue(year);
+    @GetMapping("/revenue/by-months")
+    public List<RevenuePointDTO> getRevenueByMonths(
+            @RequestParam int year
+    ) {
+        return reportService.getRevenueByMonths(year);
     }
 
-    @GetMapping("/revenue/total")
-    public RevenueDTO getTotalRevenue() {
-        return reportService.getTotalRevenue();
-    }
 
     // ==================== ORDER STATUS ====================
 
@@ -50,19 +50,36 @@ public class ReportController {
     // ==================== BEST SELLING PRODUCTS ====================
 
     @GetMapping("/products/best-selling")
-    public List<BestSellingProductDTO> getBestSellingProducts() {
-        return reportService.getBestSellingProducts();
+    public List<BestSellingProductDTO> getBestSellingProducts(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer quarter
+    ) {
+        return reportService.getBestSellingProducts(year, month, quarter);
     }
+
 
     // ==================== IMPORT COST & PROFIT ====================
-
-    @GetMapping("/imports/total-cost")
-    public RevenueDTO getTotalImportCost() {
-        return reportService.getTotalImportCost();
+    @GetMapping("/profit/monthly")
+    public ProfitDTO getProfitMonthly(@RequestParam int month, @RequestParam int year) {
+        return reportService.getProfitMonthly(month, year);
     }
 
-    @GetMapping("/profit")
-    public ProfitDTO getProfit() {
-        return reportService.getProfit();
+    @GetMapping("/profit/yearly")
+    public ProfitDTO getProfitYearly(@RequestParam int year) {
+        return reportService.getProfitYearly(year);
     }
+
+    @GetMapping("/profit/quarter")
+    public ProfitDTO getProfitQuarter(@RequestParam int quarter, @RequestParam int year) {
+        return reportService.getProfitQuarter(quarter, year);
+    }
+
+    @GetMapping("/profit/yearly-chart")
+    public List<ProfitChartPointDTO> getProfitYearlyChart(
+            @RequestParam int year
+    ) {
+        return reportService.getProfitChartByYear(year);
+    }
+
 }
