@@ -5,6 +5,7 @@ import com.example.Decoria.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,5 +43,14 @@ public class UserController {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/avatar")
+    public ResponseEntity<UserDTO> updateAvatar(
+            @PathVariable UUID id,
+            @RequestParam("file") MultipartFile avatar
+    ) {
+        return ResponseEntity.ok(userService.updateAvatar(id, avatar));
+    }
+
 
 }

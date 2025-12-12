@@ -1,9 +1,7 @@
 package com.example.Decoria.service;
 
-import com.example.Decoria.dto.OrderDetailResponseDTO;
-import com.example.Decoria.dto.OrderItemDetailDTO;
-import com.example.Decoria.dto.OrderRequestDTO;
-import com.example.Decoria.dto.OrderResponseDTO;
+import com.example.Decoria.dto.*;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -13,4 +11,7 @@ public interface OrderService {
     OrderResponseDTO getOrderDetail(UUID orderId);
     OrderResponseDTO cancelOrder(UUID orderId);
     OrderDetailResponseDTO getOrderDetails(UUID orderId);
+
+    //order
+    ApplyVoucherResponse applyVoucher(ApplyVoucherRequest request);
 }

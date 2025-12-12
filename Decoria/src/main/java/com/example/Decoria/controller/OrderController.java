@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.Decoria.dto.ApplyVoucherRequest;
+import com.example.Decoria.dto.ApplyVoucherResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -53,5 +55,13 @@ public class OrderController {
     public ResponseEntity<OrderDetailResponseDTO> getOrderDetails(@PathVariable UUID orderId) {
         OrderDetailResponseDTO orderDetails = orderService.getOrderDetails(orderId);
         return ResponseEntity.ok(orderDetails);
+    }
+
+    //order có voucher
+    @PostMapping("/apply-voucher")
+    public ResponseEntity<ApplyVoucherResponse> applyVoucher(
+            @RequestBody ApplyVoucherRequest request
+    ) {
+        return ResponseEntity.ok(orderService.applyVoucher(request));
     }
 }

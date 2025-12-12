@@ -8,7 +8,14 @@ import com.example.Decoria.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -102,5 +109,39 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
+
+    @Override
+    public UserDTO updateAvatar(UUID id, MultipartFile avatar) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Tạo thư mục images nếu chưa có
+        File dir = new File("images/");
+        if (!dir.exists()) dir.mkdirs();
+
+        // Tạo tên file duy nhất
+        String filename = System.currentTimeMillis() + "_" + avatar.getOriginalFilename();
+        Path path = Paths.get("images/" + filename);
+
+        try {
+            // Lưu file
+            Files.copy(avatar.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save avatar");
+        }
+
+        // Xóa avatar cũ (nếu có)
+        if (user.getAvatar() != null) {
+            File oldFile = new File("images/" + user.getAvatar());
+            if (oldFile.exists()) oldFile.delete();
+        }
+
+        // Cập nhật DB
+        String avatarUrl = "http://localhost:8081/images/" + filename;
+        user.setAvatar(avatarUrl);
+
+        return userMapper.toDTO(userRepository.save(user));
+    }
+
 
 }

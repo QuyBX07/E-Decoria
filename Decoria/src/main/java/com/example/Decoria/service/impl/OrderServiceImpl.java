@@ -1,21 +1,16 @@
 package com.example.Decoria.service.impl;
 
-import com.example.Decoria.dto.OrderDetailResponseDTO;
-import com.example.Decoria.dto.OrderItemDetailDTO;
-import com.example.Decoria.dto.OrderRequestDTO;
-import com.example.Decoria.dto.OrderResponseDTO;
+import com.example.Decoria.dto.*;
 import com.example.Decoria.entity.*;
 import com.example.Decoria.exception.NotFoundException;
-import com.example.Decoria.repository.OrderRepository;
-import com.example.Decoria.repository.PaymentRepository;
-import com.example.Decoria.repository.ProductRepository;
-import com.example.Decoria.repository.UserRepository;
+import com.example.Decoria.repository.*;
 import com.example.Decoria.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,6 +23,8 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentRepository paymentRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final VoucherRepository voucherRepository;
+    private final UserVoucherRepository userVoucherRepository;
 
     @Transactional
     @Override
@@ -35,6 +32,8 @@ public class OrderServiceImpl implements OrderService {
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException("User not found"));
+
+
         // Tạo Order trước
         Order order = Order.builder()
                 .user(user)
@@ -78,6 +77,73 @@ public class OrderServiceImpl implements OrderService {
 
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
+
+        // ==================================================
+        // 3️⃣ Xử lý VOUCHER (nếu có voucherId)
+        // ==================================================
+        if (request.getVoucherId() != null) {
+
+            Voucher voucher = voucherRepository.findById(request.getVoucherId())
+                    .orElseThrow(() -> new RuntimeException("Voucher not found"));
+
+            // Tìm UserVoucher
+            UserVoucher userVoucher = userVoucherRepository
+                    .findByUserIdAndVoucherId(user.getId(), voucher.getId())
+                    .orElseThrow(() -> new RuntimeException("User has not saved this voucher"));
+
+            if (userVoucher.getStatus() == UserVoucher.Status.USED) {
+                throw new RuntimeException("Voucher already used");
+            }
+
+            // Kiểm tra hạn sử dụng
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
+                throw new RuntimeException("Voucher expired or inactive");
+            }
+
+            // Kiểm tra min order
+            if (voucher.getMinOrderValue() != null &&
+                    totalAmount.compareTo(voucher.getMinOrderValue()) < 0) {
+                throw new RuntimeException("Order does not meet minimum order value");
+            }
+
+            // Kiểm tra usageLimit tổng
+            if (voucher.getUsageLimit() != null &&
+                    voucher.getUsedCount() >= voucher.getUsageLimit()) {
+                throw new RuntimeException("Voucher usage limit reached");
+            }
+
+            // Tính giảm giá
+            BigDecimal discount;
+            if (voucher.getDiscountType() == Voucher.DiscountType.PERCENT) {
+                discount = totalAmount.multiply(voucher.getDiscountValue())
+                        .divide(BigDecimal.valueOf(100));
+            } else {
+                discount = voucher.getDiscountValue();
+            }
+
+            // Không cho giảm quá nhiều
+            if (discount.compareTo(totalAmount) > 0) {
+                discount = totalAmount;
+            }
+
+            // Áp dụng giảm giá
+            totalAmount = totalAmount.subtract(discount);
+            order.setTotalAmount(totalAmount);
+
+            // Gán voucher vào Order
+            order.setVoucher(voucher);
+
+            // Cập nhật voucher tổng
+            voucher.setUsedCount(voucher.getUsedCount() + 1);
+            voucherRepository.save(voucher);
+
+            // Cập nhật UserVoucher
+            userVoucher.setUsedCount(userVoucher.getUsedCount() + 1);
+            userVoucher.setStatus(UserVoucher.Status.USED);
+            userVoucherRepository.save(userVoucher);
+        }
+
 
         // Lưu Order
         Order savedOrder = orderRepository.save(order);
@@ -135,6 +201,7 @@ public class OrderServiceImpl implements OrderService {
                     // Lấy payment info (nếu có)
                     Payment payment = paymentRepository.findByOrderId(order.getId()).orElse(null);
                     String paymentMethod = payment != null ? payment.getMethod().name() : "UNKNOWN";
+                    String paymentStatus = payment != null ? payment.getStatus().name() : "UNKNOWN";
                     String transactionId = payment != null ? payment.getTransactionId() : null;
                     String createdAt = order.getCreatedAt() != null
                             ? order.getCreatedAt().toString()
@@ -145,6 +212,7 @@ public class OrderServiceImpl implements OrderService {
                             order.getId(),
                             order.getTotalAmount(),
                             order.getStatus().name(),
+                            paymentStatus,   // 🆕 thêm đúng vị trí
                             paymentMethod,
                             order.getRecipientName(),
                             order.getRecipientPhone(),
@@ -272,6 +340,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getId(),
                 order.getTotalAmount(),
                 order.getStatus().name(),
+                order.getPayment() != null ? order.getPayment().getStatus().name() : null,
                 order.getPayment() != null ? order.getPayment().getMethod().name() : null,
                 order.getRecipientName(),
                 order.getRecipientPhone(),
@@ -283,4 +352,66 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
+
+    //order
+    @Override
+    public ApplyVoucherResponse applyVoucher(ApplyVoucherRequest req) {
+
+        Voucher voucher = voucherRepository.findByCode(req.getVoucherCode())
+                .orElseThrow(() -> new RuntimeException("Voucher not found"));
+
+        //kiẻme tra usedlimit
+        if (voucher.getUsageLimit() != null &&
+                voucher.getUsedCount() >= voucher.getUsageLimit()) {
+            throw new RuntimeException("Voucher usage limit reached");
+        }
+
+        // Kiểm tra ngày
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
+            throw new RuntimeException("Voucher is expired or not active yet");
+        }
+
+        // Kiểm tra min order
+        if (voucher.getMinOrderValue() != null &&
+                req.getOrderTotal().compareTo(voucher.getMinOrderValue()) < 0) {
+            throw new RuntimeException("Order does not meet the minimum value");
+        }
+
+        // Kiểm tra user đã claim voucher chưa
+        UserVoucher userVoucher = userVoucherRepository
+                .findByUserIdAndVoucherId(req.getUserId(), voucher.getId())
+                .orElseThrow(() -> new RuntimeException("User has not saved this voucher"));
+
+        if (userVoucher.getStatus() == UserVoucher.Status.USED) {
+            throw new RuntimeException("Voucher already used");
+        }
+
+        // Tính số tiền giảm
+        BigDecimal discount = BigDecimal.ZERO;
+
+        if (voucher.getDiscountType() == Voucher.DiscountType.PERCENT) {
+            discount = req.getOrderTotal()
+                    .multiply(voucher.getDiscountValue())
+                    .divide(BigDecimal.valueOf(100));
+        } else {
+            discount = voucher.getDiscountValue();
+        }
+
+        if (discount.compareTo(req.getOrderTotal()) > 0) {
+            discount = req.getOrderTotal();
+        }
+
+        BigDecimal finalPrice = req.getOrderTotal().subtract(discount);
+
+        return ApplyVoucherResponse.builder()
+                .discount(discount)
+                .finalPrice(finalPrice)
+                .message("Voucher applied successfully")
+                .voucherCode(voucher.getCode())
+                .voucherId(voucher.getId())
+                .discountType(voucher.getDiscountType())
+                .discountValue(voucher.getDiscountValue())
+                .build();
+    }
 }

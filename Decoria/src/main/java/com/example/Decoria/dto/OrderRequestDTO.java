@@ -12,6 +12,7 @@ import java.util.UUID;
 @Setter
 public class OrderRequestDTO {
     private UUID userId;
+    private UUID voucherId;
     private String shippingAddress;
     private String shippingMethod;
     private Payment.PaymentMethod paymentMethod;

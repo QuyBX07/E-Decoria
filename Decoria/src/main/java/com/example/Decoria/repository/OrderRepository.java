@@ -81,13 +81,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 """)
     BigDecimal getRevenueBetween(LocalDateTime start, LocalDateTime end);
 
-
-
-
     @Query("""
         SELECT o.status, COUNT(o)
         FROM Order o
         GROUP BY o.status
     """)
     List<Object[]> getOrderCountByStatus();
+
+    // voucher
+    @Query("SELECT o FROM Order o WHERE o.voucher.id = :voucherId")
+    List<Order> findAllByVoucherId(UUID voucherId);
 }

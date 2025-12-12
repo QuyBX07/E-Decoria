@@ -61,6 +61,10 @@ public class Order {
     @JsonManagedReference //
     private List<OrderItem> orderItems;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id")
+    private Voucher voucher;
+
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference // ✅ thêm dòng này
     private Payment payment;

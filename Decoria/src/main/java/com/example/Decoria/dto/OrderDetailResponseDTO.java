@@ -14,6 +14,7 @@ public class OrderDetailResponseDTO {
     private UUID id;
     private BigDecimal totalAmount;
     private String status;
+    private String paymentStatus;
     private String paymentMethod;
     private String recipientName;
     private String recipientPhone;

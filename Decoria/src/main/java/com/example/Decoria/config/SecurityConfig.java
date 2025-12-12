@@ -1,5 +1,6 @@
 package com.example.Decoria.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,17 +20,24 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationFilter jwtAuthFilter
+    ) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+
+                        // PUBLIC
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/products/**",
@@ -38,25 +46,42 @@ public class SecurityConfig {
                                 "/api/models/upload",
                                 "/api/models/**",
                                 "/images/**",
-                                "/api/admin/orders/**",
+                                "/api/payment/**",
                                 "/api/reviews/product/**",
-                                "/api/reports/**"
+                                "/api/vouchers/active"
                         ).permitAll()
+
+                        // CUSTOMER (ROLE_CUSTOMER hoặc ROLE_ADMIN)
                         .requestMatchers(
                                 "/api/profile/**",
                                 "/api/orders/**",
                                 "/api/orders/detail/**",
                                 "/api/cart/**",
-                                "/api/reviews"
-                        ).authenticated()
+                                "/api/reviews",
+                                "/api/user-vouchers/**",
+                                "/api/vouchers/**"
+                        ).hasAnyRole("CUSTOMER", "ADMIN")
+
+                        // ADMIN ONLY
+                        .requestMatchers(
+                                "/api/admin/**",
+                                "/api/admin/orders/**",
+                                "/api/reports/**"
+                        ).hasRole("ADMIN")
+
+                        // Mặc định: cho phép public
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
+                )
                 .formLogin(login -> login.disable())
                 .httpBasic(basic -> basic.disable());
 
         return http.build();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -72,7 +97,7 @@ public class SecurityConfig {
                 "https://quy.name.vn",
                 "https://estate.quy.name.vn"
         ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
