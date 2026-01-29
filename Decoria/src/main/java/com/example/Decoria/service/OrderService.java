@@ -14,4 +14,7 @@ public interface OrderService {
 
     //order
     ApplyVoucherResponse applyVoucher(ApplyVoucherRequest request);
+
+    public String retryPayment(UUID orderId, String ipAddr);
+
 }

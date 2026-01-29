@@ -34,3 +34,10 @@ export const deleteImport = async (id: string): Promise<void> => {
   const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Không thể xóa đơn nhập");
 };
+
+export const getImportDetail = async (id: string) => {
+  const res = await fetch(`${API_URL}/${id}/details`);
+  if (!res.ok) throw new Error("Không thể tải chi tiết đơn nhập");
+  return res.json();
+};
+

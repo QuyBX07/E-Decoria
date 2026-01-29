@@ -54,7 +54,7 @@ const ManageModels: React.FC = () => {
 
   // ========= UPLOAD PREVIEW IMAGE ==========
   const handlePreviewUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -88,7 +88,7 @@ const ManageModels: React.FC = () => {
       Swal.fire(
         "Thiếu dữ liệu",
         "Bạn phải chọn sản phẩm và upload file 3D",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -99,7 +99,7 @@ const ManageModels: React.FC = () => {
       Swal.fire(
         "Thành công",
         editingId ? "Đã cập nhật model 3D" : "Đã thêm model mới",
-        "success"
+        "success",
       );
 
       resetForm();
@@ -242,7 +242,6 @@ const ManageModels: React.FC = () => {
             <tr>
               <th className="p-3 text-left">Preview</th>
               <th className="p-3 text-left">Model URL</th>
-              <th className="p-3 text-left">Size</th>
               <th className="p-3 text-center">Hành động</th>
             </tr>
           </thead>
@@ -257,9 +256,9 @@ const ManageModels: React.FC = () => {
                   />
                 </td>
                 <td className="p-3">{m.modelUrl}</td>
-                <td className="p-3">
+                {/* <td className="p-3">
                   {((form.fileSize ?? 0) / 1024).toFixed(1) + " KB"}
-                </td>
+                </td> */}
                 <td className="p-3 space-x-2 text-center">
                   <Button variant="outline" onClick={() => handleEdit(m)}>
                     Sửa

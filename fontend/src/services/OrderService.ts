@@ -63,3 +63,12 @@ export const getOrderDetailById = async (
   );
   return res.data;
 };
+
+// 💳 Thanh toán lại đơn hàng
+export const retryPayment = async (orderId: string) => {
+  const res = await axios.get(
+    `http://localhost:8081/api/payment/retry?orderId=${orderId}`,
+    authHeaders()
+  );
+  return res.data; // { payment_url }
+};

@@ -20,6 +20,7 @@ public class UserVoucherResponseDTO {
     private String description;
     private Voucher.DiscountType discountType;
     private BigDecimal discountValue;
+    private BigDecimal minOrderValue;   // 👈 thêm
     private LocalDateTime savedAt;
     private UserVoucher.Status status;
 }

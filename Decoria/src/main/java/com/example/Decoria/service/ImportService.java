@@ -1,5 +1,6 @@
 package com.example.Decoria.service;
 
+import com.example.Decoria.dto.ImportOrderDetailDTO;
 import com.example.Decoria.dto.ImportOrderRequest;
 import com.example.Decoria.entity.ImportOrder;
 
@@ -15,4 +16,7 @@ public interface ImportService {
     ImportOrder getImportById(UUID id);
 
      void deleteImport(UUID id);
+
+    ImportOrderDetailDTO getImportDetail(UUID id);
+
 }

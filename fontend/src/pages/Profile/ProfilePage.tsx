@@ -4,6 +4,7 @@ import PersonalInfo from "@/components/Profile/PersonalInfo";
 import Orders from "@/components/Profile/Orders";
 import PurchaseHistory from "@/components/Profile/PurchaseHistory";
 import ChangePassword from "@/components/Profile/ChangePassword";
+import MyVoucherPage from "@/components/Profile/MyVoucher";
 import { getProfile } from "@/services/ProfileService";
 import { User } from "@/types/User";
 import HeaderSection from "@/components/HeaderSection"; // ✅ import header có sẵn
@@ -33,6 +34,8 @@ const ProfilePage: React.FC = () => {
         return <Orders />;
       case "history":
         return <PurchaseHistory />;
+      case "voucher":
+        return <MyVoucherPage />;
       case "password":
         return <ChangePassword />;
       default:

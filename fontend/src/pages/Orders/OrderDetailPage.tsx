@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getOrderDetailById, cancelOrder } from "@/services/OrderService";
+import {
+  getOrderDetailById,
+  cancelOrder,
+  retryPayment,
+} from "@/services/OrderService";
 import { OrderDetailResponseDTO } from "@/types/Order";
 import { Package, Clock, Truck, XCircle } from "lucide-react";
 import Swal from "sweetalert2";
@@ -95,6 +99,21 @@ const OrderDetailPage: React.FC = () => {
       }
     });
   };
+  const handleRetryPayment = async () => {
+    if (!order) return;
+
+    try {
+      const res = await retryPayment(order.id);
+      window.location.href = res.payment_url; // redirect sang VNPay
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Không thể thanh toán lại",
+        text: "Vui lòng thử lại sau",
+      });
+    }
+  };
 
   return (
     <>
@@ -120,7 +139,22 @@ const OrderDetailPage: React.FC = () => {
           </div>
           <div>
             <h3 className="mb-2 font-medium text-gray-700">💳 Thanh toán</h3>
-            <p>Phương thức: {order.paymentMethod}</p>
+            <p className="flex items-center gap-2 whitespace-nowrap">
+              <span>Phương thức:</span>
+              <span>{order.paymentMethod}</span>
+              <span
+                className={`px-2 py-0.5 text-xs rounded-full
+      ${
+        order.paymentStatus === "COMPLETED"
+          ? "bg-green-100 text-green-700"
+          : "bg-yellow-100 text-yellow-700"
+      }`}
+              >
+                {order.paymentStatus === "COMPLETED"
+                  ? "Đã thanh toán"
+                  : "Chưa thanh toán"}
+              </span>
+            </p>
             <p className="text-sm text-gray-500">
               Mã giao dịch: {order.transactionId}
             </p>
@@ -186,6 +220,19 @@ const OrderDetailPage: React.FC = () => {
 
         {/* Nút hành động chung */}
         <div className="flex justify-end gap-2 mt-8">
+          {/* Thanh toán lại */}
+          {order.status === "PENDING" &&
+            order.paymentMethod !== "COD" &&
+            order.paymentStatus !== "COMPLETED" && (
+              <button
+                onClick={handleRetryPayment}
+                className="px-5 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
+              >
+                Thanh toán lại
+              </button>
+            )}
+
+          {/* Hủy đơn */}
           {order.status === "PENDING" && (
             <button
               onClick={handleCancelOrder}
@@ -195,13 +242,14 @@ const OrderDetailPage: React.FC = () => {
             </button>
           )}
 
-          {["SHIPPED", "DELIVERED"].includes(order.status) && (
+          {/* Không thể hủy */}
+          {["CONFIRMED", "DELIVERED"].includes(order.status) && (
             <button
               onClick={() =>
                 Swal.fire(
                   "Không thể hủy!",
                   "Đơn hàng đã được giao/đang giao nên không thể hủy.",
-                  "warning"
+                  "warning",
                 )
               }
               className="px-5 py-2 text-white bg-gray-400 rounded-lg cursor-not-allowed"

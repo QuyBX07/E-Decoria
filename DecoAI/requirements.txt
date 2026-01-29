@@ -6,4 +6,4 @@ openai
 pydantic
 sqlalchemy
 pymysql
-google-generativeai
+google-genai

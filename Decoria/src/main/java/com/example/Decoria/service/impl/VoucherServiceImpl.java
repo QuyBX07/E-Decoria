@@ -26,6 +26,7 @@ public class VoucherServiceImpl implements VoucherService {
                 .discountValue(dto.getDiscountValue())
                 .minOrderValue(dto.getMinOrderValue())
                 .usageLimit(dto.getUsageLimit())
+                .usedCount(0)
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
                 .status(Voucher.VoucherStatus.ACTIVE)
@@ -84,6 +85,7 @@ public class VoucherServiceImpl implements VoucherService {
                 .usedCount(v.getUsedCount())
                 .startDate(v.getStartDate())
                 .endDate(v.getEndDate())
+                .createdAt(v.getCreatedAt())
                 .status(v.getStatus())
                 .build();
     }

@@ -27,7 +27,7 @@ export async function getCartItems(): Promise<CartItemResponseDTO[]> {
 
 // ➕ Thêm sản phẩm vào giỏ
 export async function addToCart(
-  dto: CartItemRequestDTO
+  dto: CartItemRequestDTO,
 ): Promise<CartItemResponseDTO> {
   const res = await fetch(`${BASE_URL}/add`, {
     method: "POST",
@@ -39,7 +39,7 @@ export async function addToCart(
   });
 
   if (!res.ok) {
-    throw new Error("Không thể thêm sản phẩm vào giỏ");
+    throw new Error("Không thể thêm sản phẩm vào giỏ, vui lòng đăng nhập");
   }
 
   return res.json();
@@ -72,7 +72,7 @@ export async function clearCart(): Promise<void> {
 // 🔁 Cập nhật số lượng sản phẩm trong giỏ
 export async function updateCartItem(
   productId: string,
-  quantity: number
+  quantity: number,
 ): Promise<void> {
   const res = await fetch(`${BASE_URL}/update`, {
     method: "PUT",

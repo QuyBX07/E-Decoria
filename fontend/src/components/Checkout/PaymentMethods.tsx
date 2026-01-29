@@ -27,17 +27,6 @@ const PaymentMethods: React.FC<Props> = ({ value, onChange }) => {
         <input
           type="radio"
           name="payment"
-          value="MOMO"
-          checked={value === "MOMO"}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <span>MoMo (chuyển hướng thanh toán) — chưa tích hợp</span>
-      </label>
-
-      <label className="flex items-center gap-2">
-        <input
-          type="radio"
-          name="payment"
           value="VNPAY"
           checked={value === "VNPAY"}
           onChange={(e) => onChange(e.target.value)}

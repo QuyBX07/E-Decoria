@@ -5,6 +5,7 @@ import com.example.Decoria.entity.*;
 import com.example.Decoria.exception.NotFoundException;
 import com.example.Decoria.repository.*;
 import com.example.Decoria.service.OrderService;
+import com.example.Decoria.service.VNPayService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final VoucherRepository voucherRepository;
     private final UserVoucherRepository userVoucherRepository;
+    private final VNPayService vnPayService;
 
     @Transactional
     @Override
@@ -358,33 +360,33 @@ public class OrderServiceImpl implements OrderService {
     public ApplyVoucherResponse applyVoucher(ApplyVoucherRequest req) {
 
         Voucher voucher = voucherRepository.findByCode(req.getVoucherCode())
-                .orElseThrow(() -> new RuntimeException("Voucher not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Voucher"));
 
         //kiẻme tra usedlimit
         if (voucher.getUsageLimit() != null &&
                 voucher.getUsedCount() >= voucher.getUsageLimit()) {
-            throw new RuntimeException("Voucher usage limit reached");
+            throw new RuntimeException("Voucher đã hết lượt sử dụng");
         }
 
         // Kiểm tra ngày
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
-            throw new RuntimeException("Voucher is expired or not active yet");
+            throw new RuntimeException("Voucher chưa hoạt động");
         }
 
         // Kiểm tra min order
         if (voucher.getMinOrderValue() != null &&
                 req.getOrderTotal().compareTo(voucher.getMinOrderValue()) < 0) {
-            throw new RuntimeException("Order does not meet the minimum value");
+            throw new RuntimeException("Đơn hàng chưa thỏa mã giá trị tối thiểu");
         }
 
         // Kiểm tra user đã claim voucher chưa
         UserVoucher userVoucher = userVoucherRepository
                 .findByUserIdAndVoucherId(req.getUserId(), voucher.getId())
-                .orElseThrow(() -> new RuntimeException("User has not saved this voucher"));
+                .orElseThrow(() -> new RuntimeException("Người dùng chưa lưu voucher này"));
 
         if (userVoucher.getStatus() == UserVoucher.Status.USED) {
-            throw new RuntimeException("Voucher already used");
+            throw new RuntimeException("Voucher đã được sử dụng");
         }
 
         // Tính số tiền giảm
@@ -414,4 +416,37 @@ public class OrderServiceImpl implements OrderService {
                 .discountValue(voucher.getDiscountValue())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public String retryPayment(UUID orderId, String ipAddr) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        // ❌ Không cho thanh toán lại
+        if (order.getStatus() != Order.OrderStatus.PENDING) {
+            throw new IllegalStateException("Order không hợp lệ để thanh toán lại");
+        }
+
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalStateException("Payment not found"));
+
+        if (payment.getStatus() == Payment.PaymentStatus.COMPLETED) {
+            throw new IllegalStateException("Đơn hàng đã được thanh toán");
+        }
+
+        // Reset payment state
+        payment.setStatus(Payment.PaymentStatus.PENDING);
+        payment.setTransactionId(null);
+        paymentRepository.save(payment);
+
+        // Sinh lại link VNPay
+        return vnPayService.createPaymentUrl(
+                order.getTotalAmount().longValue(),
+                order.getId().toString(),
+                ipAddr
+        );
+    }
+
 }

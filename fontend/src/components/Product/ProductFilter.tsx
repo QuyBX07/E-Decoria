@@ -78,7 +78,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
           onChange={(e) => onSortChange(e.target.value)}
           className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-[#f4c76c] focus:outline-none"
         >
-          <option value="featured">Nổi bật</option>
+          <option value="featured">Tiêu chí</option>
           <option value="price-low">Giá thấp đến cao</option>
           <option value="price-high">Giá cao đến thấp</option>
           <option value="rating">Đánh giá cao</option>

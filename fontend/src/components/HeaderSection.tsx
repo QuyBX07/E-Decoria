@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ShoppingCart, Menu, X } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { jwtDecode } from "jwt-decode";
+import { getProfile } from "@/services/ProfileService";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const navLinks = [
   { label: "Trang chủ", path: "/" },
   { label: "Sản phẩm", path: "/products" },
   { label: "Về chúng tôi", path: "/about" },
   { label: "Liên hệ", path: "/contact" },
+  { label: "Voucher", path: "/vouchers" },
 ];
 
 const HeaderSection: React.FC = () => {
@@ -20,24 +23,36 @@ const HeaderSection: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const storedAvatar = localStorage.getItem("avatar");
 
-    if (token) {
-      try {
-        const decoded: { exp: number } = jwtDecode(token);
-        if (decoded.exp * 1000 < Date.now()) {
-          // token hết hạn
-          localStorage.clear();
-          setIsLoggedIn(false);
-          setAvatar("/images/avatar.jpg");
-        } else {
-          setIsLoggedIn(true);
-          if (storedAvatar) setAvatar(storedAvatar);
-        }
-      } catch {
+    if (!token) return;
+
+    try {
+      const decoded: { exp: number } = jwtDecode(token);
+
+      if (decoded.exp * 1000 < Date.now()) {
         localStorage.clear();
         setIsLoggedIn(false);
+        return;
       }
+
+      setIsLoggedIn(true);
+
+      // ⬅️ Gọi API để lấy avatar thật của user
+      getProfile()
+        .then((user) => {
+          if (user.avatar) {
+            // Nếu avatar backend trả về đã có link đầy đủ
+            setAvatar(user.avatar);
+          } else {
+            setAvatar("/images/avatar.jpg");
+          }
+        })
+        .catch(() => {
+          setAvatar("/images/avatar.jpg");
+        });
+    } catch {
+      localStorage.clear();
+      setIsLoggedIn(false);
     }
   }, []);
 
@@ -50,7 +65,7 @@ const HeaderSection: React.FC = () => {
       cancelButtonText: "Hủy",
     }).then((result) => {
       if (result.isConfirmed) {
-        localStorage.clear(); // xóa toàn bộ token, avatar, email,...
+        localStorage.clear();
         Swal.fire({
           icon: "success",
           title: "Đã đăng xuất",
@@ -68,7 +83,6 @@ const HeaderSection: React.FC = () => {
     <header className="sticky top-0 z-50 shadow-sm border-b border-primary/10 bg-[#FFF8F0]/80 backdrop-blur-xl">
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
           <Link
             to="/"
             className="font-serif text-2xl font-bold tracking-tight transition-colors text-primary-dark hover:text-primary"
@@ -76,7 +90,6 @@ const HeaderSection: React.FC = () => {
             Décoria<span className="text-primary-light">.</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="items-center hidden gap-8 md:flex">
             {navLinks.map(({ label, path }) => (
               <Link
@@ -89,10 +102,11 @@ const HeaderSection: React.FC = () => {
             ))}
           </nav>
 
-          {/* Right Section */}
           <div className="flex items-center gap-4">
-            {/* Cart */}
-            {/* Cart */}
+            {/* 🔔 Notification Bell */}
+            {isLoggedIn && <NotificationBell />}
+
+            {/* 🛒 Cart */}
             <Button
               variant="ghost"
               className="relative p-2 transition rounded-full hover:bg-primary/10"
@@ -104,9 +118,7 @@ const HeaderSection: React.FC = () => {
                     text: "Vui lòng đăng nhập để sử dụng giỏ hàng.",
                     confirmButtonText: "Đăng nhập",
                   }).then((result) => {
-                    if (result.isConfirmed) {
-                      navigate("/login");
-                    }
+                    if (result.isConfirmed) navigate("/login");
                   });
                 } else {
                   navigate("/cart");
@@ -116,24 +128,22 @@ const HeaderSection: React.FC = () => {
               <ShoppingCart className="w-5 h-5 text-primary-dark" />
             </Button>
 
-            {/* Avatar / Login */}
+            {/* 👤 Avatar / Login */}
             {isLoggedIn ? (
-              <div className="relative">
-                <button
-                  onClick={() => navigate("/profile")}
-                  className="transition rounded-full hover:ring-2 hover:ring-primary/40 focus:outline-none"
-                >
-                  <img
-                    src={avatar || "/images/avatar.jpg"}
-                    alt="Avatar"
-                    className="object-cover rounded-full w-9 h-9 ring-2 ring-primary/30"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "/images/avatar.jpg";
-                    }}
-                  />
-                </button>
-              </div>
+              <button
+                onClick={() => navigate("/profile")}
+                className="transition rounded-full hover:ring-2 hover:ring-primary/40 focus:outline-none"
+              >
+                <img
+                  src={avatar}
+                  alt="Avatar"
+                  className="object-cover rounded-full w-9 h-9 ring-2 ring-primary/30"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      "/images/avatar.jpg";
+                  }}
+                />
+              </button>
             ) : (
               <Button
                 variant="outline"
@@ -144,7 +154,7 @@ const HeaderSection: React.FC = () => {
               </Button>
             )}
 
-            {/* Mobile Menu */}
+            {/* ☰ Mobile menu */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 transition rounded-lg md:hidden hover:bg-primary/10"
@@ -158,7 +168,6 @@ const HeaderSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isOpen && (
           <nav className="pb-4 mt-2 space-y-2 md:hidden animate-fadeIn">
             {navLinks.map(({ label, path }) => (

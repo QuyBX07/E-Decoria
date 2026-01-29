@@ -1,26 +1,29 @@
 import os
-import google.generativeai as genai
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
+
 api_key = os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
     print("❌ LỖI: Chưa có API Key.")
-else:
-    try:
-        genai.configure(api_key=api_key)
+    exit()
 
-        # --- SỬA DÒNG NÀY ---
-        # Đổi từ 'gemini-1.5-flash' thành 'gemini-2.0-flash'
-        model = genai.GenerativeModel('gemini-flash-latest')
-        # --------------------
+try:
+    # ✅ SDK MỚI: dùng Client
+    client = genai.Client(api_key=api_key)
 
-        print(f"⏳ Đang gửi tin nhắn test bằng model {model.model_name}...")
-        response = model.generate_content("Chào Gemini, hãy nói 'Kết nối thành công' bằng tiếng Việt.")
+    print("⏳ Đang gửi tin nhắn test ...")
 
-        print("\n✅ KẾT QUẢ:")
-        print(response.text)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents="Chào Gemini, hãy trả lời: Kết nối thành công"
+    )
 
-    except Exception as e:
-        print(f"\n❌ Lỗi: {e}")
+    print("\n✅ KẾT QUẢ:")
+    print(response.text)
+
+except Exception as e:
+    print("\n❌ LỖI KHI GỌI GEMINI:")
+    print(e)

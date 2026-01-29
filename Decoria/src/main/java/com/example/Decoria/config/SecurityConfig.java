@@ -59,14 +59,17 @@ public class SecurityConfig {
                                 "/api/cart/**",
                                 "/api/reviews",
                                 "/api/user-vouchers/**",
-                                "/api/vouchers/**"
+                                "/api/vouchers/**",
+                                "/api/notifications"
                         ).hasAnyRole("CUSTOMER", "ADMIN")
 
                         // ADMIN ONLY
                         .requestMatchers(
                                 "/api/admin/**",
                                 "/api/admin/orders/**",
-                                "/api/reports/**"
+                                "/api/reports/**",
+                                "/api/admin/notifications",
+                                "/api/users"
                         ).hasRole("ADMIN")
 
                         // Mặc định: cho phép public

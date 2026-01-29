@@ -8,12 +8,14 @@ export interface OrderItemRequestDTO {
 
 export interface OrderRequestDTO {
   userId: string;
+  voucherId?: string;
   shippingAddress: string;
   shippingMethod: string;
   paymentMethod: string; // "COD" | "MOMO"
   recipientName: string;     // 👈 thêm
   recipientPhone: string;    // 👈 thêm
   items: OrderItemRequestDTO[];
+
 }
 
 // --- Response DTOs ---
@@ -59,6 +61,7 @@ export interface OrderDetailResponseDTO {
   id: string;
   totalAmount: number;
   status: string;
+  paymentStatus: string;
   paymentMethod: string;
   recipientName: string;
   recipientPhone: string;

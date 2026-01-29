@@ -24,7 +24,8 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Playfair Display", "serif"], // cho tiêu đề
+        display: ["Playfair Display", "serif"],
+        serif: ["Playfair Display", "serif"],
       },
       boxShadow: {
         soft: "0 4px 10px rgba(0,0,0,0.06)",

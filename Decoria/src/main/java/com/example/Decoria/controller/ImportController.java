@@ -44,4 +44,10 @@ public class ImportController {
         importService.deleteImport(id);
         return ResponseEntity.ok("Import order deleted successfully");
     }
+
+    @GetMapping("/{id}/details")
+    public ResponseEntity<?> getImportDetail(@PathVariable UUID id) {
+        return ResponseEntity.ok(importService.getImportDetail(id));
+    }
+
 }

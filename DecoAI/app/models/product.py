@@ -1,3 +1,4 @@
+#model/product.py
 from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, TIMESTAMP, BINARY
 from sqlalchemy.sql import func
 from app.core.database import Base

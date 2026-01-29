@@ -1,6 +1,15 @@
-# app/services/product.py
+#services/product_service.py
 from sqlalchemy import text
 from app.core.database import engine
+import logging
+import binascii
+
+
+def _binary_to_uuid(bin_id):
+    if bin_id is None:
+        return None
+    return binascii.hexlify(bin_id).decode()
+
 
 def search_products_dynamic(
     keyword: str = None,
@@ -12,13 +21,14 @@ def search_products_dynamic(
 ):
     sql_query = """
         SELECT 
-            name, 
-            description, 
-            price, 
-            stock, 
-            color, 
-            material, 
-            style, 
+            id,
+            name,
+            description,
+            price,
+            stock,
+            color,
+            material,
+            style,
             image_url
         FROM products
         WHERE is_active = 1 AND stock > 0
@@ -51,19 +61,24 @@ def search_products_dynamic(
 
     sql_query += " LIMIT 10"
 
+    logging.info("SQL: %s | params=%s", sql_query, params)
+
     try:
         with engine.connect() as conn:
             result = conn.execute(text(sql_query), params)
             products = []
+
             for row in result:
                 item = dict(row._mapping)
-                if item.get("price"):
-                    item["price"] = float(item["price"])
+                item["id"] = _binary_to_uuid(item["id"])
+                item["price"] = float(item["price"])
                 products.append(item)
 
             if not products:
-                return "Hệ thống: Không tìm thấy sản phẩm nào khớp với yêu cầu."
+                return "Không tìm thấy sản phẩm phù hợp."
+
             return products
 
     except Exception as e:
         return f"Hệ thống gặp lỗi truy vấn: {str(e)}"
+

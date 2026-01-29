@@ -2,7 +2,13 @@ import React, { useEffect, useState } from "react";
 import { getOrdersByUser } from "@/services/OrderService";
 import { getProfile } from "@/services/ProfileService";
 import { OrderDetailResponseDTO } from "@/types/Order";
-import { Package, CheckCircle, Clock, XCircle } from "lucide-react";
+import {
+  Package,
+  CheckCircle,
+  Clock,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
 
 const PurchaseHistory: React.FC = () => {
   const [orders, setOrders] = useState<OrderDetailResponseDTO[]>([]);
@@ -39,7 +45,7 @@ const PurchaseHistory: React.FC = () => {
       case "DELIVERED":
         return (
           <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" /> Hoàn thành
+            <CheckCircle className="w-4 h-4" /> Giao Hàng
           </span>
         );
       case "PENDING":
@@ -52,6 +58,12 @@ const PurchaseHistory: React.FC = () => {
         return (
           <span className="flex items-center gap-1 text-red-600">
             <XCircle className="w-4 h-4" /> Đã hủy
+          </span>
+        );
+      case "CONFIRMED":
+        return (
+          <span className="flex items-center gap-1 text-blue-600">
+            <CheckCircle2 className="w-4 h-4" /> Thành công
           </span>
         );
       default:

@@ -12,6 +12,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { getCartItems } from "@/services/CartService";
 import { getProfile } from "@/services/ProfileService";
 import HeaderSection from "@/components/HeaderSection";
+import { createVNPayPayment } from "@/services/PaymentService";
+import { ApplyVoucherResponse, IUserVoucher } from "@/types/Voucher";
+import { applyVoucher, getUserVouchers } from "@/services/VoucherService";
+import VoucherModal from "@/components/Checkout/VoucherModal";
+import Swal from "sweetalert2";
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,24 +36,35 @@ const CheckoutPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🧭 Kiểm tra đăng nhập
+  // VOUCHER STATE
+  const [selectedVoucher, setSelectedVoucher] =
+    useState<ApplyVoucherResponse | null>(null);
+  const [voucherCode, setVoucherCode] = useState<string>("");
+
+  const [userVouchers, setUserVouchers] = useState<IUserVoucher[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const originalTotal = cartItems.reduce(
+    (sum, it) => sum + it.unitPrice * it.quantity,
+    0
+  );
+
+  // Kiểm tra đăng nhập
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    }
+    if (!token) navigate("/login");
   }, [navigate]);
 
-  // 🛒 Load giỏ hàng + thông tin người dùng
+  // Load giỏ hàng + profile + user vouchers
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 🧩 Load giỏ hàng
+        // Load giỏ hàng
         if (passedItems.length > 0) {
           setCartItems(passedItems);
         } else {
           const data = await getCartItems();
-          const mapped = data.map((it) => ({
+          const mapped: CartItem[] = data.map((it) => ({
             productId: it.productId,
             name: it.productName,
             image: it.productImage,
@@ -58,19 +74,24 @@ const CheckoutPage: React.FC = () => {
           setCartItems(mapped);
         }
 
-        // 🧩 Load thông tin người dùng (đã đăng nhập)
+        // Load profile
         const profile = await getProfile();
         setUserId(profile.id);
-        // ✅ Tự động điền vào form nhưng vẫn cho sửa được
+
         setShippingInfo({
           recipientName: profile.fullName || "",
           recipientPhone: profile.phone || "",
           address: profile.address || "",
           shippingMethod: "Giao hàng nhanh",
         });
-      } catch (err) {
-        console.error("Không thể tải dữ liệu:", err);
-        // fallback demo nếu không lấy được
+
+        // Load user vouchers
+        const vouchers = await getUserVouchers(profile.id);
+        setUserVouchers(vouchers);
+      } catch (error) {
+        console.error("Không thể tải dữ liệu:", error);
+
+        // fallback demo
         setCartItems([
           {
             productId: "041c24ab-58be-432f-a98f-ea78528589d6",
@@ -91,7 +112,7 @@ const CheckoutPage: React.FC = () => {
     fetchData();
   }, [passedItems]);
 
-  // 🚀 Đặt hàng
+  // Đặt hàng
   const handlePlaceOrder = async () => {
     if (
       !shippingInfo.recipientName ||
@@ -109,6 +130,7 @@ const CheckoutPage: React.FC = () => {
 
     const orderReq: OrderRequestDTO = {
       userId,
+      voucherId: selectedVoucher?.voucherId,
       shippingAddress: shippingInfo.address,
       shippingMethod: shippingInfo.shippingMethod,
       recipientName: shippingInfo.recipientName,
@@ -121,12 +143,13 @@ const CheckoutPage: React.FC = () => {
       })),
     };
 
+    console.log("Order Request:", orderReq);
+
     try {
       setIsLoading(true);
       const res: OrderResponseDTO = await createOrder(orderReq);
 
       if (paymentMethod === "COD") {
-        // Gắn thêm ảnh & tên sản phẩm
         const enrichedOrder = {
           ...res,
           items: res.items.map((it) => {
@@ -143,28 +166,71 @@ const CheckoutPage: React.FC = () => {
           state: { order: enrichedOrder },
         });
       } else {
-        // 🏦 Thanh toán online (MOMO/VNPAY)
-        // const pay = await createMomoPayment(res.id);
-        // window.location.href = pay.payUrl;
+        const payment = await createVNPayPayment(res.id, res.totalAmount);
+        window.location.href = payment.payment_url;
       }
-    } catch (err: unknown) {
-      console.error("Đặt hàng thất bại:", err);
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
       const msg =
-        (err as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || "Đặt hàng thất bại, vui lòng thử lại.";
+        err.response?.data?.message || "Đặt hàng thất bại, vui lòng thử lại.";
       alert(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Áp dụng voucher
+  const handleApplyVoucher = async () => {
+    if (!voucherCode) return;
+
+    try {
+      const request = {
+        userId,
+        orderTotal: originalTotal,
+        voucherCode,
+      };
+
+      const res: ApplyVoucherResponse = await applyVoucher(request);
+      setSelectedVoucher(res);
+
+      Swal.fire({
+        icon: "success",
+        title: "Thành công",
+        text: "Áp dụng voucher thành công!",
+      });
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { error?: string; message?: string } };
+      };
+
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Không áp dụng được voucher";
+
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi",
+        text: msg,
+      });
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setSelectedVoucher(null);
+    setVoucherCode("");
+  };
+
+  const discount = selectedVoucher?.discount ?? 0;
   const shippingFee = 30000;
+  const finalTotal = originalTotal - discount + shippingFee;
 
   return (
     <>
       <HeaderSection />
+
       <div className="container grid grid-cols-1 gap-8 p-4 mx-auto md:grid-cols-3">
-        {/* Cột trái: form giao hàng & thanh toán */}
+        {/* Form giao hàng + thanh toán */}
         <div className="space-y-6 md:col-span-2">
           <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="mb-4 text-2xl font-semibold">
@@ -179,16 +245,64 @@ const CheckoutPage: React.FC = () => {
             </h2>
             <PaymentMethods value={paymentMethod} onChange={setPaymentMethod} />
           </div>
+
+          {/* Voucher */}
+          <div className="p-6 bg-white rounded-lg shadow-md">
+            <h2 className="mb-4 text-2xl font-semibold">Voucher</h2>
+
+            <div className="flex items-center gap-2">
+              <input
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)}
+                placeholder="Nhập mã voucher"
+                className="flex-1 px-3 py-2 border rounded"
+              />
+              {selectedVoucher ? (
+                <button
+                  onClick={handleRemoveVoucher}
+                  className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600"
+                >
+                  Huỷ
+                </button>
+              ) : (
+                <button
+                  onClick={handleApplyVoucher}
+                  className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+                >
+                  Áp dụng
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => setModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium text-pink-500 transition border border-pink-400 rounded-lg hover:bg-pink-50"
+            >
+              🎟️ Chọn voucher đã lưu
+            </button>
+
+            {selectedVoucher && (
+              <p className="mt-2 text-green-600">
+                Giảm giá: {selectedVoucher.discount.toLocaleString()}₫
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Cột phải: tóm tắt đơn hàng */}
+        {/* Tóm tắt đơn hàng */}
         <div className="md:col-span-1">
           <div className="sticky p-6 bg-white rounded-lg shadow-md top-24">
-            <CheckoutSummary items={cartItems} shippingFee={shippingFee} />
+            <CheckoutSummary
+              items={cartItems}
+              shippingFee={shippingFee}
+              discount={discount}
+              finalTotal={finalTotal}
+            />
+
             <button
               onClick={handlePlaceOrder}
               disabled={isLoading}
-              className="w-full py-3 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+              className="w-full py-3 mt-4 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
             >
               {isLoading
                 ? "Đang xử lý..."
@@ -199,6 +313,17 @@ const CheckoutPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Voucher Modal */}
+      <VoucherModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        vouchers={userVouchers}
+        onSelect={(code: string) => {
+          setVoucherCode(code);
+          setModalOpen(false);
+        }}
+      />
     </>
   );
 };

@@ -56,6 +56,7 @@ public class UserVoucherServiceImpl implements UserVoucherService {
                         .description(uv.getVoucher().getDescription())
                         .discountType(uv.getVoucher().getDiscountType())
                         .discountValue(uv.getVoucher().getDiscountValue())
+                        .minOrderValue(uv.getVoucher().getMinOrderValue())
                         .savedAt(uv.getSavedAt())
                         .status(uv.getStatus())
                         .build()

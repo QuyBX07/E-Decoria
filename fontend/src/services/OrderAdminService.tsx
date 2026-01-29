@@ -3,13 +3,19 @@ import { OrderAdmin } from "@/types/AdminOrder";
 
 const API_URL = "http://localhost:8081/api/admin/orders";
 
+// Hàm lấy token chung
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 // Định nghĩa type cho query params
 interface OrderQueryParams {
   status?: string;
   sort?: "asc" | "desc";
 }
 
-// Lấy danh sách đơn hàng (có thể filter theo status & sort)
+// Lấy danh sách đơn hàng (có filter)
 export const getOrders = async (
   status?: string,
   sort: "asc" | "desc" = "desc"
@@ -20,14 +26,17 @@ export const getOrders = async (
 
   const response: AxiosResponse<OrderAdmin[]> = await axios.get(API_URL, {
     params,
+    headers: getAuthHeader(),
   });
+
   return response.data;
 };
 
 // Lấy chi tiết đơn hàng
 export const getOrderById = async (id: string): Promise<OrderAdmin> => {
   const response: AxiosResponse<OrderAdmin> = await axios.get(
-    `${API_URL}/${id}`
+    `${API_URL}/${id}`,
+    { headers: getAuthHeader() }
   );
   return response.data;
 };
@@ -40,7 +49,10 @@ export const updateOrderStatus = async (
   const response: AxiosResponse<string> = await axios.put(
     `${API_URL}/${id}/status`,
     null,
-    { params: { status } }
+    {
+      params: { status },
+      headers: getAuthHeader(),
+    }
   );
   return response.data;
 };
@@ -48,7 +60,8 @@ export const updateOrderStatus = async (
 // Xóa đơn hàng
 export const deleteOrder = async (id: string): Promise<string> => {
   const response: AxiosResponse<string> = await axios.delete(
-    `${API_URL}/${id}`
+    `${API_URL}/${id}`,
+    { headers: getAuthHeader() }
   );
   return response.data;
 };

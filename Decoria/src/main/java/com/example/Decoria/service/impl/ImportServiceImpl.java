@@ -1,6 +1,8 @@
 package com.example.Decoria.service.impl;
 
 import com.example.Decoria.dto.ImportItemDTO;
+import com.example.Decoria.dto.ImportOrderDetailDTO;
+import com.example.Decoria.dto.ImportOrderItemDTO;
 import com.example.Decoria.dto.ImportOrderRequest;
 import com.example.Decoria.entity.ImportOrder;
 import com.example.Decoria.entity.ImportOrderItem;
@@ -95,4 +97,35 @@ public class ImportServiceImpl implements ImportService {
         importOrderItemRepository.deleteAll(items);
         importOrderRepository.delete(order);
     }
+
+    @Override
+    public ImportOrderDetailDTO getImportDetail(UUID id) {
+        ImportOrder order = importOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Import order not found"));
+
+        List<ImportOrderItem> items =
+                importOrderItemRepository.findByImportOrder(order);
+
+        return ImportOrderDetailDTO.builder()
+                .id(order.getId())
+                .supplierName(order.getSupplierName())
+                .importDate(order.getImportDate())
+                .totalAmount(order.getTotalAmount())
+                .items(
+                        items.stream().map(item ->
+                                ImportOrderItemDTO.builder()
+                                        .productId(item.getProduct().getId())
+                                        .productName(item.getProduct().getName())
+                                        .quantity(item.getQuantity())
+                                        .importPrice(item.getImportPrice())
+                                        .subtotal(
+                                                item.getImportPrice()
+                                                        .multiply(BigDecimal.valueOf(item.getQuantity()))
+                                        )
+                                        .build()
+                        ).toList()
+                )
+                .build();
+    }
+
 }

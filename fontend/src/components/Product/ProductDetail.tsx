@@ -113,7 +113,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             transition={{ duration: 0.8 }}
             className="flex flex-col justify-center"
           >
-            <h1 className="mb-2 font-serif text-3xl font-bold text-gray-800 md:text-4xl">
+            <h1 className="mb-2 text-3xl font-bold text-gray-800 font-display md:text-4xl">
               {product.name}
             </h1>
 
@@ -211,7 +211,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               Sản phẩm liên quan
             </h2>
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
-              {relatedProducts.map((p) => (
+              {relatedProducts.slice(0, 3).map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

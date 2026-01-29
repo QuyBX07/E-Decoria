@@ -2,11 +2,15 @@ package com.example.Decoria.service.impl;
 
 import com.example.Decoria.dto.OrderAdminResponseDTO;
 import com.example.Decoria.entity.Order;
+import com.example.Decoria.entity.OrderItem;
 import com.example.Decoria.entity.Payment;
+import com.example.Decoria.entity.Product;
 import com.example.Decoria.exception.NotFoundException;
 import com.example.Decoria.mapper.OrderMapper;
 import com.example.Decoria.repository.OrderRepository;
+import com.example.Decoria.repository.ProductRepository;
 import com.example.Decoria.service.OrderAdminService;
+import com.example.Decoria.service.OrderStatusNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +26,9 @@ public class OrderAdminServiceImpl implements OrderAdminService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final OrderStatusNotificationService orderStatusNotificationService;
+    private final ProductRepository productRepository;
+
 
     @Override
     public List<OrderAdminResponseDTO> getAllOrders(String status, String sort) {
@@ -55,21 +62,51 @@ public class OrderAdminServiceImpl implements OrderAdminService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
 
+        Order.OrderStatus oldStatus = order.getStatus();
         Order.OrderStatus newStatus = Order.OrderStatus.valueOf(status.toUpperCase());
-        order.setStatus(newStatus);
 
-        // 🔥 Khi đơn hàng chuyển sang CONFIRMED → tự động update Payment
-        if (newStatus == Order.OrderStatus.CONFIRMED) {
-            Payment payment = order.getPayment();
-            if (payment != null) {
-                payment.setStatus(Payment.PaymentStatus.COMPLETED);
-            }
-            order.setPaymentStatus("PAID"); // nếu muốn sync với field paymentStatus trong Order
+        // Không đổi trạng thái
+        if (oldStatus == newStatus) {
+            return;
         }
 
-        orderRepository.save(order);
-    }
+        // 🔥 ADMIN HỦY → HOÀN KHO (KHÔNG CHẶN GÌ HẾT)
+        if (newStatus == Order.OrderStatus.CANCELLED) {
 
+            for (OrderItem item : order.getOrderItems()) {
+                Product product = productRepository.findById(item.getProductId())
+                        .orElseThrow(() ->
+                                new NotFoundException("Không tìm thấy sản phẩm: " + item.getProductId()));
+
+                product.setStock(product.getStock() + item.getQuantity());
+                productRepository.save(product);
+            }
+
+            order.setPaymentStatus("CANCELLED");
+
+            if (order.getPayment() != null) {
+                order.getPayment().setStatus(Payment.PaymentStatus.FAILED);
+            }
+        }
+
+        // Logic cũ: xác nhận đã nhận hàng
+        if (newStatus == Order.OrderStatus.CONFIRMED) {
+            if (order.getPayment() != null) {
+                order.getPayment().setStatus(Payment.PaymentStatus.COMPLETED);
+            }
+            order.setPaymentStatus("PAID");
+        }
+
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+
+        orderStatusNotificationService.notifyOrderStatusChanged(
+                order.getUser(),
+                order,
+                oldStatus,
+                newStatus
+        );
+    }
 
     @Override
     public void deleteOrder(UUID orderId) {

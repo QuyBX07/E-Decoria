@@ -11,11 +11,18 @@ export type CartItem = {
 interface Props {
   items: CartItem[];
   shippingFee?: number;
+  discount?: number; // 🔥 Thêm
+  finalTotal?: number; // 🔥 Thêm
 }
 
-const CheckoutSummary: React.FC<Props> = ({ items, shippingFee = 0 }) => {
+const CheckoutSummary: React.FC<Props> = ({
+  items,
+  shippingFee = 0,
+  discount = 0,
+  finalTotal,
+}) => {
   const subtotal = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
-  const total = subtotal + shippingFee;
+  const total = finalTotal ?? subtotal + shippingFee;
 
   return (
     <div className="p-4 space-y-4 border rounded">
@@ -48,17 +55,25 @@ const CheckoutSummary: React.FC<Props> = ({ items, shippingFee = 0 }) => {
 
       <div className="pt-3 space-y-1 border-t">
         <div className="flex justify-between text-sm">
-          {" "}
-          <span>Tạm tính</span> <span>{subtotal.toLocaleString()}₫</span>{" "}
+          <span>Tạm tính</span>
+          <span>{subtotal.toLocaleString()}₫</span>
         </div>
+
         <div className="flex justify-between text-sm">
-          {" "}
-          <span>Phí vận chuyển</span>{" "}
-          <span>{shippingFee.toLocaleString()}₫</span>{" "}
+          <span>Phí vận chuyển</span>
+          <span>{shippingFee.toLocaleString()}₫</span>
         </div>
-        <div className="flex justify-between font-semibold">
-          {" "}
-          <span>Tổng</span> <span>{total.toLocaleString()}₫</span>{" "}
+
+        {discount > 0 && (
+          <div className="flex justify-between text-sm text-green-600">
+            <span>Giảm giá</span>
+            <span>-{discount.toLocaleString()}₫</span>
+          </div>
+        )}
+
+        <div className="flex justify-between pt-1 font-semibold border-t">
+          <span>Tổng</span>
+          <span>{total.toLocaleString()}₫</span>
         </div>
       </div>
     </div>

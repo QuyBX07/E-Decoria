@@ -10,16 +10,18 @@ const BASE_URL = "http://localhost:8081/api";
 const ManageProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState<Omit<Product, "id" | "stock">>({
+  const [form, setForm] = useState<Omit<Product, "id">>({
     name: "",
     description: "",
     price: 0,
+    stock: 0,
     categoryId: "",
     imageUrl: "",
     color: "",
     material: "",
     style: "",
   });
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -83,7 +85,7 @@ const ManageProducts: React.FC = () => {
       Swal.fire(
         "Thành công",
         editingId ? "Đã cập nhật sản phẩm" : "Đã thêm sản phẩm mới",
-        "success"
+        "success",
       );
 
       resetForm();
@@ -98,6 +100,7 @@ const ManageProducts: React.FC = () => {
       name: "",
       description: "",
       price: 0,
+      stock: 0,
       categoryId: "",
       imageUrl: "",
       color: "",
@@ -114,6 +117,7 @@ const ManageProducts: React.FC = () => {
       name: p.name,
       description: p.description ?? "",
       price: p.price,
+      stock: p.stock ?? 0, // ✅ thêm dòng này
       categoryId: p.categoryId,
       imageUrl: p.imageUrl,
       color: p.color ?? "",
@@ -122,6 +126,7 @@ const ManageProducts: React.FC = () => {
     });
     setPreview(p.imageUrl);
   };
+
 
   const handleDelete = async (id: string) => {
     const confirm = await Swal.fire({
@@ -144,14 +149,14 @@ const ManageProducts: React.FC = () => {
   };
 
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
 
   const paginatedProducts = filteredProducts.slice(
     (page - 1) * pageSize,
-    page * pageSize
+    page * pageSize,
   );
 
   return (
@@ -201,6 +206,16 @@ const ManageProducts: React.FC = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="label">Số lượng</label>
+            <input
+              type="number"
+              value={form.stock}
+              onChange={(e) => setForm({ ...form, stock: +e.target.value })}
+              className="input"
+            />
           </div>
 
           <div>

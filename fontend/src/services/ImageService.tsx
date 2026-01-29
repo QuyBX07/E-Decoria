@@ -10,8 +10,14 @@ export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
+  const token = localStorage.getItem("token");
+
   const res = await fetch(`${BASE_URL}/upload`, {
     method: "POST",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      // ❗ không set Content-Type, để browser tự đặt multipart/form-data
+    },
     body: formData,
   });
 

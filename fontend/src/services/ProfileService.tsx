@@ -66,3 +66,23 @@ export async function changePassword(
 
   return res.text(); // Backend trả string "Đổi mật khẩu thành công!"
 }
+
+export async function uploadAvatar(userId: string, file: File): Promise<User> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`http://localhost:8081/api/users/${userId}/avatar`, {
+    method: "PUT",
+    headers: {
+      ...getAuthHeader(),
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error("Upload avatar thất bại");
+  }
+
+  return res.json();
+}
+

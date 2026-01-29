@@ -8,7 +8,7 @@ const HeroSection: React.FC = () => {
         <div className="grid items-center gap-12 md:grid-cols-2">
           {/* Left Content */}
           <div className="space-y-6">
-            <h2 className="font-serif text-4xl font-bold md:text-5xl text-foreground text-balance">
+            <h2 className="text-4xl font-bold font-display md:text-5xl text-foreground text-balance">
               Biến không gian của bạn thành tác phẩm nghệ thuật
             </h2>
             <p className="text-lg leading-relaxed text-muted-foreground">

@@ -1,5 +1,6 @@
 package com.example.Decoria.controller;
 
+import com.example.Decoria.service.OrderService;
 import com.example.Decoria.service.VNPayService;
 import com.example.Decoria.util.VNPayUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -22,6 +24,8 @@ import java.util.Map;
 public class PaymentController {
 
     private final VNPayService vnPayService;
+
+    private final OrderService orderService;
 
     @GetMapping("/vnpay")
     public ResponseEntity<?> pay(@RequestParam long amount,
@@ -55,6 +59,18 @@ public class PaymentController {
         String redirectUrl = "http://localhost:5173/order-success/" + orderId;
 
         response.sendRedirect(redirectUrl);
+    }
+
+    @GetMapping("/retry")
+    public ResponseEntity<?> retryPayment(@RequestParam UUID orderId,
+                                          HttpServletRequest request) {
+
+        String ipAddr = request.getRemoteAddr();
+        String paymentUrl = orderService.retryPayment(orderId, ipAddr);
+
+        return ResponseEntity.ok(
+                Map.of("payment_url", paymentUrl)
+        );
     }
 
 }

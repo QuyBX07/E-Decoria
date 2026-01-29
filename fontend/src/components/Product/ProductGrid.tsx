@@ -21,6 +21,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
       <h2 className="mb-10 text-3xl font-semibold text-center text-amber-900">
         Sản phẩm nổi bật
       </h2>
+
       <div className="grid grid-cols-1 gap-8 px-6 sm:grid-cols-2 md:grid-cols-3">
         {products.map((p: Product) => (
           <ProductCard key={p.id} product={p} />

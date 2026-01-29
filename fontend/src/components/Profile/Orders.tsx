@@ -3,7 +3,7 @@ import { getOrdersByUser } from "@/services/OrderService";
 import { getProfile } from "@/services/ProfileService";
 import { OrderResponseDTO } from "@/types/Order";
 import { useNavigate } from "react-router-dom";
-import { Package, Clock, CheckCircle, Truck, XCircle } from "lucide-react";
+import { Clock, CheckCircle, Truck, XCircle } from "lucide-react";
 
 const Orders: React.FC = () => {
   const [orders, setOrders] = useState<OrderResponseDTO[]>([]);
@@ -53,19 +53,13 @@ const Orders: React.FC = () => {
       case "CONFIRMED":
         return (
           <span className="flex items-center gap-1 text-blue-600">
-            <Package className="w-4 h-4" /> Đã xác nhận
-          </span>
-        );
-      case "SHIPPED":
-        return (
-          <span className="flex items-center gap-1 text-purple-600">
-            <Truck className="w-4 h-4" /> Đang giao
+            <CheckCircle className="w-4 h-4" /> Hoàn thành
           </span>
         );
       case "DELIVERED":
         return (
           <span className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="w-4 h-4" /> Hoàn thành
+            <Truck className="w-4 h-4" /> Đang giao
           </span>
         );
       case "CANCELLED":

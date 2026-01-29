@@ -31,7 +31,15 @@ const LoginPage: React.FC = () => {
       }
 
       const data = await res.json();
+
+      console.log("LOGIN DATA:", data); // Debug xem có lỗi gì không
+
       const user = data.user;
+
+      if (!user) {
+        console.error("❌ Không nhận được user từ API");
+        return;
+      }
 
       // ✅ Lưu đúng cách
       localStorage.setItem("token", data.token);
